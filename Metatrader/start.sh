@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # Configuration variables
-mt5file='/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe'
+# Use 32-bit Wine prefix to avoid debugger detection issues with Wine 10.3+
+mt5file='/config/.wine/drive_c/Program Files/MetaTrader 5/terminal.exe'
 WINEPREFIX='/config/.wine'
+WINEARCH='win32'
 WINEDEBUG='-all'
 metatrader_version="5.0.36"
 mt5server_port="8001"
@@ -14,6 +16,7 @@ webview2_url="https://go.microsoft.com/fwlink/p/?LinkId=2124703"
 
 # Export environment variables for Wine
 export WINEPREFIX
+export WINEARCH
 export WINEDEBUG
 # Note: MT5 requires dbghelp.dll to run, so we can't disable it
 export WINEDLLOVERRIDES="winedbg.exe=d"
