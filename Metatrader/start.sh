@@ -13,8 +13,13 @@ python_url="https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe"
 mt5setup_url="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 webview2_url="https://go.microsoft.com/fwlink/p/?LinkId=2124703"
 
-# Export WINEPREFIX for winetricks
+# Export environment variables for Wine
 export WINEPREFIX
+export WINEDEBUG
+
+# Disable Wine debugging DLLs to prevent MT5 debugger detection
+# dbghelp and dbgeng are Windows debugging libraries that MT5 checks for
+export WINEDLLOVERRIDES="dbghelp=d;dbgeng=d;winedbg.exe=d"
 
 # Function to display a graphical message
 show_message() {
@@ -70,19 +75,24 @@ else
     show_message "[2/9] Core fonts are already installed."
 fi
 
-# Configure Wine registry for font smoothing (ClearType)
+# Configure Wine registry for font smoothing (ClearType) and anti-debug bypass
 fontsmooth_marker="/config/.wine/.fontsmooth_configured"
 if [ ! -e "$fontsmooth_marker" ]; then
-    show_message "[3/9] Configuring font smoothing (ClearType)..."
+    show_message "[3/9] Configuring Wine registry (font smoothing, anti-debug)..."
     # Enable font smoothing
     $wine_executable reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f
     $wine_executable reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f
     $wine_executable reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingGamma /t REG_DWORD /d 1400 /f
     $wine_executable reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingOrientation /t REG_DWORD /d 1 /f
+
+    # Disable debugging DLLs in Wine to prevent MT5 debugger detection
+    $wine_executable reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v "dbghelp" /t REG_SZ /d "" /f
+    $wine_executable reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v "dbgeng" /t REG_SZ /d "" /f
+
     touch "$fontsmooth_marker"
-    show_message "[3/9] Font smoothing configured."
+    show_message "[3/9] Wine registry configured."
 else
-    show_message "[3/9] Font smoothing is already configured."
+    show_message "[3/9] Wine registry is already configured."
 fi
 
 # Install WebView2 Runtime for HTML rendering (reports, help, etc.)
