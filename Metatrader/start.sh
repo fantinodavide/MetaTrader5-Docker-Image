@@ -12,20 +12,27 @@ python_url="https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe"
 mt5setup_url="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 webview2_url="https://go.microsoft.com/fwlink/p/?LinkId=2124703"
 
+# Get UID/GID from environment variables (provided by Dokploy)
+# Fallback to 1000 if not set (default for linuxserver images)
+WINE_UID="${UID:-${PUID:-1000}}"
+WINE_GID="${GID:-${PGID:-1000}}"
+
 # Export environment variables for Wine
 export WINEPREFIX
 export WINEDEBUG
 export WINEDLLOVERRIDES="dbghelp=d;dbgeng=d;winedbg.exe=d"
 
-# Determine the correct user to run Wine commands
-# linuxserver.io base images use 'abc' user with UID/GID from environment
-WINE_USER="abc"
+# Fix ownership of Wine prefix if running as root
+if [ "$(id -u)" = "0" ] && [ -d "$WINEPREFIX" ]; then
+    chown -R "$WINE_UID:$WINE_GID" "$WINEPREFIX" 2>/dev/null || true
+    chown -R "$WINE_UID:$WINE_GID" /config 2>/dev/null || true
+fi
 
-# Function to run commands as the Wine user
+# Function to run commands as the Wine user (using su with the abc user)
 run_as_wine_user() {
     if [ "$(id -u)" = "0" ]; then
-        # Running as root, switch to abc user
-        s6-setuidgid "$WINE_USER" "$@"
+        # Running as root, switch to abc user and pass environment
+        su -s /bin/bash -c "WINEPREFIX='$WINEPREFIX' WINEDEBUG='$WINEDEBUG' WINEDLLOVERRIDES='$WINEDLLOVERRIDES' DISPLAY='$DISPLAY' $*" abc
     else
         "$@"
     fi
@@ -33,12 +40,20 @@ run_as_wine_user() {
 
 # Function to run wine commands as the correct user
 run_wine() {
-    run_as_wine_user wine "$@"
+    if [ "$(id -u)" = "0" ]; then
+        su -s /bin/bash -c "WINEPREFIX='$WINEPREFIX' WINEDEBUG='$WINEDEBUG' WINEDLLOVERRIDES='$WINEDLLOVERRIDES' DISPLAY='$DISPLAY' wine $*" abc
+    else
+        wine "$@"
+    fi
 }
 
 # Function to run winetricks as the correct user
 run_winetricks() {
-    run_as_wine_user winetricks "$@"
+    if [ "$(id -u)" = "0" ]; then
+        su -s /bin/bash -c "WINEPREFIX='$WINEPREFIX' WINEDEBUG='$WINEDEBUG' DISPLAY='$DISPLAY' winetricks $*" abc
+    else
+        winetricks "$@"
+    fi
 }
 
 # Function to display a graphical message
@@ -74,7 +89,7 @@ check_dependency "wine"
 if [ ! -e "/config/.wine/drive_c/windows/mono" ]; then
     show_message "[1/9] Downloading and installing Mono..."
     curl -o /config/.wine/drive_c/mono.msi "$mono_url"
-    chown "$WINE_USER:$WINE_USER" /config/.wine/drive_c/mono.msi 2>/dev/null || true
+    chown "$WINE_UID:$WINE_GID" /config/.wine/drive_c/mono.msi 2>/dev/null || true
     WINEDLLOVERRIDES=mscoree=d run_wine msiexec /i /config/.wine/drive_c/mono.msi /qn
     rm /config/.wine/drive_c/mono.msi
     show_message "[1/9] Mono installed."
@@ -131,7 +146,7 @@ else
     run_wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f
     show_message "[5/9] Downloading MT5 installer..."
     curl -o /config/.wine/drive_c/mt5setup.exe "$mt5setup_url"
-    chown "$WINE_USER:$WINE_USER" /config/.wine/drive_c/mt5setup.exe 2>/dev/null || true
+    chown "$WINE_UID:$WINE_GID" /config/.wine/drive_c/mt5setup.exe 2>/dev/null || true
     show_message "[5/9] Installing MetaTrader 5..."
     run_wine "/config/.wine/drive_c/mt5setup.exe" "/auto" &
     wait
@@ -189,7 +204,11 @@ fi
 
 # Start the MT5 server on Linux (must run as wine user)
 show_message "[9/9] Starting the mt5linux server..."
-run_as_wine_user python3 -m mt5linux --host 0.0.0.0 -p "$mt5server_port" -w wine python.exe &
+if [ "$(id -u)" = "0" ]; then
+    su -s /bin/bash -c "WINEPREFIX='$WINEPREFIX' WINEDEBUG='$WINEDEBUG' WINEDLLOVERRIDES='$WINEDLLOVERRIDES' DISPLAY='$DISPLAY' python3 -m mt5linux --host 0.0.0.0 -p $mt5server_port -w wine python.exe" abc &
+else
+    python3 -m mt5linux --host 0.0.0.0 -p "$mt5server_port" -w wine python.exe &
+fi
 
 sleep 5
 
