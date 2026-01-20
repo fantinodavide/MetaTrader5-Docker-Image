@@ -30,7 +30,8 @@ RUN apt-get update && \
         fontconfig \
         python3 \
         python3-pip \
-        curl && \
+        curl \
+        x11-utils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

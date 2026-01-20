@@ -16,6 +16,22 @@ export HOME="/config"
 
 echo "[MT5] Starting MetaTrader 5 setup..."
 
+# Wait for X server to be available
+echo "[MT5] Waiting for display to be ready..."
+for i in {1..60}; do
+    if xdpyinfo -display :1 >/dev/null 2>&1; then
+        echo "[MT5] Display is ready."
+        break
+    fi
+    echo "[MT5] Waiting for display... ($i/60)"
+    sleep 2
+done
+
+if ! xdpyinfo -display :1 >/dev/null 2>&1; then
+    echo "[MT5] ERROR: Display not available after 2 minutes. Exiting."
+    exit 1
+fi
+
 # Ensure /config/.wine exists and has correct ownership
 mkdir -p /config/.wine /config/.cache
 chown -R abc:abc /config/.wine /config/.cache 2>/dev/null || true
@@ -29,7 +45,7 @@ run_as_abc() {
 if [ ! -d "$WINEPREFIX/drive_c" ]; then
     echo "[MT5] Initializing 64-bit Wine prefix..."
     run_as_abc wineboot --init
-    sleep 5
+    sleep 10
 fi
 
 # Install core fonts if not done
@@ -62,11 +78,16 @@ if [ ! -f "$MT5_FILE" ]; then
     rm -f /tmp/mt5setup.exe
 
     # Wait for installation to complete
-    sleep 30
+    echo "[MT5] Waiting for installation to complete..."
+    for i in {1..60}; do
+        if [ -f "$MT5_FILE" ]; then
+            echo "[MT5] MetaTrader 5 installed successfully."
+            break
+        fi
+        sleep 5
+    done
 
-    if [ -f "$MT5_FILE" ]; then
-        echo "[MT5] MetaTrader 5 installed successfully."
-    else
+    if [ ! -f "$MT5_FILE" ]; then
         echo "[MT5] Warning: MT5 installation may not have completed. Check manually."
     fi
 else
