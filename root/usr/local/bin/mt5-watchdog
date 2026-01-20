@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# MT5 Watchdog - Restarts MT5 if not running
+# Runs every 60 seconds
+
+export WINEPREFIX="/config/.wine"
+export WINEDEBUG="-all"
+export HOME="/config"
+unset LD_PRELOAD
+
+MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+
+while true; do
+    sleep 60
+
+    # Check if MT5 is installed
+    if [ ! -f "$MT5_FILE" ]; then
+        continue
+    fi
+
+    # Check if terminal64.exe is running
+    if ! pgrep -f "terminal64.exe" > /dev/null 2>&1; then
+        echo "[MT5-Watchdog] $(date): MT5 not running, starting..."
+        wine "$MT5_FILE" &
+    fi
+done

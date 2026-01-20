@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=MetaTrader 5 Watchdog
+Exec=/usr/local/bin/mt5-watchdog
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Terminal=false
