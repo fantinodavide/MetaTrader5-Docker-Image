@@ -4,8 +4,8 @@ services:
     image: gmag11/metatrader5_vnc
     container_name: mt5
     environment:
-      - PUID=${UID:-1000}
-      - PGID=${GID:-1000}
+      - PUID=0
+      - PGID=0
     volumes:
       - mt5-config:/config
     env_file:
