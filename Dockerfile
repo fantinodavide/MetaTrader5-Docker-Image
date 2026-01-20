@@ -21,6 +21,12 @@ RUN apt-get update \
     gnupg2 \
     software-properties-common \
     ca-certificates \
+    cabextract \
+    xdg-utils \
+    # Font packages for proper text rendering
+    fonts-liberation \
+    fonts-wine \
+    fontconfig \
     && mkdir -pm755 /etc/apt/keyrings \
     && wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
     && wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources \
@@ -29,6 +35,10 @@ RUN apt-get update \
     && apt-get install --install-recommends -y winehq-stable \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /etc/apt/keyrings/winehq-archive.key
+
+# Install winetricks for Windows component installation
+RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
+    && chmod +x /usr/local/bin/winetricks
 
 
 COPY /Metatrader /Metatrader
