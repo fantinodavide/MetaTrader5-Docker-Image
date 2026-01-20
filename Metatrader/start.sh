@@ -16,6 +16,7 @@ webview2_url="https://go.microsoft.com/fwlink/p/?LinkId=2124703"
 export WINEPREFIX
 export WINEDEBUG
 export WINEDLLOVERRIDES="dbghelp=d;dbgeng=d;winedbg.exe=d"
+export DISPLAY="${DISPLAY:-:1}"
 
 # Function to display a graphical message
 show_message() {
