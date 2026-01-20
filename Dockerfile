@@ -11,7 +11,7 @@ ENV TITLE="MetaTrader 5"
 ENV WINEPREFIX="/config/.wine"
 ENV WINEDEBUG="-all"
 
-# Install Wine from Debian repos and dependencies
+# Install Wine and dependencies
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --install-recommends \
@@ -22,8 +22,6 @@ RUN dpkg --add-architecture i386 && \
         fonts-liberation \
         fonts-wine \
         fontconfig \
-        python3 \
-        python3-pip \
         curl \
         wget \
         x11-utils && \
@@ -33,10 +31,6 @@ RUN dpkg --add-architecture i386 && \
 # Install winetricks
 RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks && \
     chmod +x /usr/local/bin/winetricks
-
-# Install mt5linux Python library (reusable across instances)
-RUN pip install --break-system-packages --no-cache-dir --no-deps mt5linux && \
-    pip install --break-system-packages --no-cache-dir rpyc plumbum numpy pyxdg
 
 # Copy s6 service definitions and scripts
 COPY root/ /
