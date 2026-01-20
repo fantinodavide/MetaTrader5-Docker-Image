@@ -14,6 +14,7 @@ ENV WINEDEBUG="-all"
 
 # Install Wine and dependencies in a single layer
 RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget ca-certificates && \
     dpkg --add-architecture i386 && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
@@ -27,7 +28,8 @@ RUN apt-get update && \
         fonts-wine \
         fontconfig \
         python3 \
-        python3-pip && \
+        python3-pip \
+        curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
