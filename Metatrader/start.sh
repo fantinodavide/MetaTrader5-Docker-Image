@@ -15,7 +15,8 @@ webview2_url="https://go.microsoft.com/fwlink/p/?LinkId=2124703"
 # Export environment variables for Wine
 export WINEPREFIX
 export WINEDEBUG
-export WINEDLLOVERRIDES="dbghelp=d;dbgeng=d;winedbg.exe=d"
+# Note: MT5 requires dbghelp.dll to run, so we can't disable it
+export WINEDLLOVERRIDES="winedbg.exe=d"
 export DISPLAY="${DISPLAY:-:1}"
 
 # Function to display a graphical message
@@ -78,8 +79,7 @@ if [ ! -e "$fontsmooth_marker" ]; then
     wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f
     wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingGamma /t REG_DWORD /d 1400 /f
     wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingOrientation /t REG_DWORD /d 1 /f
-    wine reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v "dbghelp" /t REG_SZ /d "" /f
-    wine reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v "dbgeng" /t REG_SZ /d "" /f
+    # Note: dbghelp is required by MT5, don't disable it
     touch "$fontsmooth_marker"
     show_message "[3/9] Wine registry configured."
 else
