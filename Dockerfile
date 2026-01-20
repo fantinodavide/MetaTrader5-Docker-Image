@@ -1,4 +1,4 @@
-FROM ghcr.io/linuxserver/webtop:alpine
+FROM lscr.io/linuxserver/webtop:debian-xfce
 
 # Labels
 ARG BUILD_DATE
@@ -12,22 +12,35 @@ ENV WINEPREFIX="/config/.wine"
 ENV WINEDEBUG="-all"
 
 # Install Wine and dependencies
-RUN apk add --no-cache \
-        wine \
-        wine-mono \
-        winetricks \
-        cabextract \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
         wget \
-        curl \
+        ca-certificates \
+        gnupg2 && \
+    dpkg --add-architecture i386 && \
+    mkdir -pm755 /etc/apt/keyrings && \
+    wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
+    wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
+    apt-get update && \
+    apt-get install -y --install-recommends \
+        winehq-stable \
+        cabextract \
+        fonts-liberation \
+        fonts-wine \
+        fontconfig \
         python3 \
-        py3-pip \
-        font-noto \
-        font-noto-cjk \
-        ttf-dejavu \
-        ttf-liberation && \
-    # Install mt5linux Python library (reusable across instances)
-    # Note: mt5linux has outdated pinned deps, install without deps then add what we need
-    pip install --break-system-packages --no-cache-dir --no-deps mt5linux && \
+        python3-pip \
+        curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install winetricks
+RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks && \
+    chmod +x /usr/local/bin/winetricks
+
+# Install mt5linux Python library (reusable across instances)
+# Note: mt5linux has outdated pinned deps, install without deps then add what we need
+RUN pip install --break-system-packages --no-cache-dir --no-deps mt5linux && \
     pip install --break-system-packages --no-cache-dir rpyc plumbum numpy pyxdg
 
 # Copy s6 service definitions and scripts
