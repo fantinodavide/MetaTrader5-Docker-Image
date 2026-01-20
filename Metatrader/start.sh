@@ -125,57 +125,58 @@ else
     rm -f /config/.wine/drive_c/mt5setup.exe
 fi
 
-# Recheck if MetaTrader 5 is installed
-if [ -e "$mt5file" ]; then
-    show_message "[6/9] File $mt5file is installed. Running MT5..."
-    $wine_executable "$mt5file" $MT5_CMD_OPTIONS &
-else
-    show_message "[6/9] File $mt5file is not installed. MT5 cannot be run."
-fi
-
-
-# Install Python in Wine if not present
+# Install Python in Wine if not present (BEFORE launching MT5)
 if ! $wine_executable python --version 2>/dev/null; then
-    show_message "[7/9] Installing Python in Wine..."
+    show_message "[6/9] Installing Python in Wine..."
     curl -L $python_url -o /tmp/python-installer.exe
     $wine_executable /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
     rm /tmp/python-installer.exe
-    show_message "[7/9] Python installed in Wine."
+    show_message "[6/9] Python installed in Wine."
 else
-    show_message "[7/9] Python is already installed in Wine."
+    show_message "[6/9] Python is already installed in Wine."
 fi
 
-# Upgrade pip and install required packages
-show_message "[8/9] Installing Python libraries"
+# Upgrade pip and install required packages (BEFORE launching MT5)
+show_message "[7/9] Installing Python libraries"
 $wine_executable python -m pip install --upgrade --no-cache-dir pip
 # Install MetaTrader5 library in Windows if not installed
-show_message "[8/9] Installing MetaTrader5 library in Windows"
+show_message "[7/9] Installing MetaTrader5 library in Windows"
 if ! is_wine_python_package_installed "MetaTrader5==$metatrader_version"; then
     $wine_executable python -m pip install --no-cache-dir MetaTrader5==$metatrader_version
 fi
 # Install mt5linux library in Windows if not installed
-show_message "[8/9] Checking and installing mt5linux library in Windows if necessary"
+show_message "[7/9] Checking and installing mt5linux library in Windows if necessary"
 if ! is_wine_python_package_installed "mt5linux"; then
     $wine_executable python -m pip install --no-cache-dir "mt5linux>=0.1.9"
 fi
 
 # Install python-dateutil if needed (datetime is built-in, but dateutil adds features)
 if ! is_wine_python_package_installed "python-dateutil"; then
-    show_message "[8/9] Installing python-dateutil library in Windows"
+    show_message "[7/9] Installing python-dateutil library in Windows"
     $wine_executable python -m pip install --no-cache-dir python-dateutil
 fi
 
 # Install mt5linux library in Linux if not installed
-show_message "[8/9] Checking and installing mt5linux library in Linux if necessary"
+show_message "[7/9] Checking and installing mt5linux library in Linux if necessary"
 if ! is_python_package_installed "mt5linux"; then
     pip install --break-system-packages --no-cache-dir --no-deps mt5linux && \
     pip install --break-system-packages --no-cache-dir rpyc plumbum numpy
 fi
 
 # Install pyxdg library in Linux if not installed
-show_message "[8/9] Checking and installing pyxdg library in Linux if necessary"
+show_message "[7/9] Checking and installing pyxdg library in Linux if necessary"
 if ! is_python_package_installed "pyxdg"; then
     pip install --break-system-packages --no-cache-dir pyxdg
+fi
+
+# NOW launch MetaTrader 5 (after all Wine installations are complete)
+if [ -e "$mt5file" ]; then
+    show_message "[8/9] Launching MetaTrader 5..."
+    $wine_executable "$mt5file" $MT5_CMD_OPTIONS &
+    # Give MT5 time to start before launching the server
+    sleep 10
+else
+    show_message "[8/9] File $mt5file is not installed. MT5 cannot be run."
 fi
 
 # Start the MT5 server on Linux
