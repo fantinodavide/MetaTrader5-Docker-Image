@@ -22,8 +22,13 @@ RUN apt-get update && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
     apt-get update && \
+    # Pin Wine to 10.0 - versions 10.3+ have debugger detection bug with MT5
+    # See: https://forum.winehq.org/viewtopic.php?t=41068
     apt-get install -y --install-recommends \
-        winehq-stable \
+        winehq-stable=10.0~bookworm-1 \
+        wine-stable=10.0~bookworm-1 \
+        wine-stable-amd64=10.0~bookworm-1 \
+        wine-stable-i386=10.0~bookworm-1 \
         cabextract \
         fonts-liberation \
         fonts-wine \
