@@ -1,4 +1,4 @@
-FROM lscr.io/linuxserver/rdesktop:ubuntu-xfce
+FROM lscr.io/linuxserver/webtop:debian-xfce
 
 # Labels
 ARG BUILD_DATE
