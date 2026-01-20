@@ -11,24 +11,14 @@ ENV TITLE="MetaTrader 5"
 ENV WINEPREFIX="/config/.wine"
 ENV WINEDEBUG="-all"
 
-# Install Wine and dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wget \
-        ca-certificates \
-        gnupg2 && \
-    dpkg --add-architecture i386 && \
-    mkdir -pm755 /etc/apt/keyrings && \
-    wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
-    wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
+# Install Wine from Debian repos (not WineHQ) and dependencies
+# Debian's wine package is typically older and doesn't have the debugger detection bug
+RUN dpkg --add-architecture i386 && \
     apt-get update && \
-    # Pin Wine to 10.0 - versions 10.3+ have debugger detection bug with MT5
-    # See: https://forum.winehq.org/viewtopic.php?t=41068
     apt-get install -y --install-recommends \
-        winehq-stable=10.0~bookworm-1 \
-        wine-stable=10.0~bookworm-1 \
-        wine-stable-amd64=10.0~bookworm-1 \
-        wine-stable-i386=10.0~bookworm-1 \
+        wine \
+        wine64 \
+        wine32:i386 \
         cabextract \
         fonts-liberation \
         fonts-wine \
@@ -36,6 +26,7 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         curl \
+        wget \
         x11-utils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
