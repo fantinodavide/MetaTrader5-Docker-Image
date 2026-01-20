@@ -3,8 +3,6 @@
 # MetaTrader 5 Installation Script
 # Runs via desktop autostart after the display is ready
 
-set -x  # Enable debug output
-
 LOG_FILE="/config/mt5-install.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
@@ -16,24 +14,23 @@ echo "=========================================="
 MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 
-# Export Wine environment
+# Export Wine environment - clear LD_PRELOAD to avoid Selkies 32-bit library errors
 export WINEPREFIX="/config/.wine"
 export WINEDEBUG="-all"
 export HOME="/config"
+unset LD_PRELOAD
 
 echo "[MT5] WINEPREFIX=$WINEPREFIX"
-echo "[MT5] HOME=$HOME"
 echo "[MT5] USER=$(whoami)"
 echo "[MT5] DISPLAY=$DISPLAY"
 
 # Ensure Wine directories exist
 mkdir -p /config/.wine /config/.cache
-echo "[MT5] Created directories"
 
 # Check if old 32-bit prefix exists and remove it
 if [ -f "$WINEPREFIX/system.reg" ]; then
-    if grep -q "win32" "$WINEPREFIX/system.reg" 2>/dev/null; then
-        echo "[MT5] WARNING: Found 32-bit Wine prefix, removing..."
+    if grep -q "#arch=win32" "$WINEPREFIX/system.reg" 2>/dev/null; then
+        echo "[MT5] Found 32-bit Wine prefix, removing..."
         rm -rf "$WINEPREFIX"
         mkdir -p "$WINEPREFIX"
     fi
@@ -44,24 +41,16 @@ if [ ! -d "$WINEPREFIX/drive_c" ]; then
     echo "[MT5] Initializing Wine prefix..."
     wineboot --init
     echo "[MT5] wineboot exit code: $?"
-    sleep 10
-    echo "[MT5] Wine prefix contents:"
-    ls -la "$WINEPREFIX/" || echo "Failed to list"
+    sleep 5
 fi
 
-# Install core fonts if not done
-if [ ! -f "$WINEPREFIX/.fonts_installed" ]; then
-    echo "[MT5] Installing fonts..."
-    winetricks -q corefonts tahoma 2>&1 || echo "[MT5] winetricks failed but continuing"
-    touch "$WINEPREFIX/.fonts_installed"
-    echo "[MT5] Fonts done"
-fi
+# Skip fonts for now - they cause hangs. MT5 will use system fonts.
+# Fonts can be installed later manually via: winetricks corefonts
 
 # Configure Wine registry
 if [ ! -f "$WINEPREFIX/.registry_configured" ]; then
     echo "[MT5] Configuring Wine registry..."
     wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f 2>&1 || true
-    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f 2>&1 || true
     wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f 2>&1 || true
     touch "$WINEPREFIX/.registry_configured"
     echo "[MT5] Registry done"
@@ -69,49 +58,49 @@ fi
 
 # Install MetaTrader 5 if not present
 if [ ! -f "$MT5_FILE" ]; then
-    echo "[MT5] Downloading MetaTrader 5 from $MT5_SETUP_URL..."
+    echo "[MT5] Downloading MetaTrader 5..."
     curl -sL -o /tmp/mt5setup.exe "$MT5_SETUP_URL"
-    CURL_EXIT=$?
-    echo "[MT5] curl exit code: $CURL_EXIT"
 
     if [ -f /tmp/mt5setup.exe ]; then
-        echo "[MT5] Download successful, size: $(ls -la /tmp/mt5setup.exe)"
-        echo "[MT5] Running installer..."
-        wine /tmp/mt5setup.exe /auto
-        WINE_EXIT=$?
-        echo "[MT5] wine installer exit code: $WINE_EXIT"
-        rm -f /tmp/mt5setup.exe
+        FILE_SIZE=$(stat -c%s /tmp/mt5setup.exe 2>/dev/null || echo "0")
+        echo "[MT5] Downloaded $FILE_SIZE bytes"
 
-        # Wait for installation
-        echo "[MT5] Waiting for installation to complete..."
-        for i in {1..60}; do
-            if [ -f "$MT5_FILE" ]; then
-                echo "[MT5] Found terminal64.exe!"
-                break
-            fi
-            echo "[MT5] Waiting... ($i/60)"
-            sleep 5
-        done
+        if [ "$FILE_SIZE" -gt 1000000 ]; then
+            echo "[MT5] Running installer (this takes a few minutes)..."
+            wine /tmp/mt5setup.exe /auto
+            echo "[MT5] Installer exit code: $?"
+            rm -f /tmp/mt5setup.exe
+
+            # Wait for installation
+            echo "[MT5] Waiting for installation..."
+            for i in {1..60}; do
+                if [ -f "$MT5_FILE" ]; then
+                    echo "[MT5] Installation complete!"
+                    break
+                fi
+                sleep 5
+            done
+        else
+            echo "[MT5] ERROR: Download seems incomplete (only $FILE_SIZE bytes)"
+        fi
     else
         echo "[MT5] ERROR: Download failed!"
     fi
-else
-    echo "[MT5] MetaTrader 5 already installed at: $MT5_FILE"
 fi
 
-# Check what got installed
-echo "[MT5] Checking Program Files:"
-ls -la "$WINEPREFIX/drive_c/Program Files/" 2>&1 || echo "No Program Files"
-ls -la "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/" 2>&1 || echo "No MT5 folder"
+# Show what's in Program Files
+echo "[MT5] Checking installation:"
+ls -la "$WINEPREFIX/drive_c/Program Files/" 2>&1 | head -20
 
 # Launch MetaTrader 5
 if [ -f "$MT5_FILE" ]; then
     echo "[MT5] Launching MetaTrader 5..."
     wine "$MT5_FILE" &
-    echo "[MT5] Launched with PID $!"
+    echo "[MT5] SUCCESS - MT5 launched!"
 else
-    echo "[MT5] ERROR: terminal64.exe not found at $MT5_FILE"
-    echo "[MT5] Please install manually via desktop"
+    echo "[MT5] ERROR: terminal64.exe not found"
+    echo "[MT5] Contents of MT5 folder (if exists):"
+    ls -la "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/" 2>&1 || echo "MT5 folder not found"
 fi
 
 echo "[MT5] Script completed at $(date)"
