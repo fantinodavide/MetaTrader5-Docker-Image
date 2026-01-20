@@ -1,0 +1,84 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+# MetaTrader 5 Installation Script
+# This script installs and configures MT5 in a 32-bit Wine prefix
+
+set -e
+
+# Configuration
+MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal.exe"
+MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+MONO_URL="https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi"
+
+# Export Wine environment
+export WINEPREFIX="/config/.wine"
+export WINEARCH="win32"
+export WINEDEBUG="-all"
+export DISPLAY="${DISPLAY:-:1}"
+
+echo "[MT5] Starting MetaTrader 5 setup..."
+
+# Initialize Wine prefix if it doesn't exist
+if [ ! -d "$WINEPREFIX" ]; then
+    echo "[MT5] Initializing 32-bit Wine prefix..."
+    wineboot --init
+    sleep 5
+fi
+
+# Install Mono if not present
+if [ ! -d "$WINEPREFIX/drive_c/windows/mono" ]; then
+    echo "[MT5] Installing Wine Mono..."
+    curl -sL -o /tmp/wine-mono.msi "$MONO_URL"
+    WINEDLLOVERRIDES="mscoree=d" wine msiexec /i /tmp/wine-mono.msi /qn
+    rm -f /tmp/wine-mono.msi
+    echo "[MT5] Mono installed."
+fi
+
+# Install core fonts if not done
+if [ ! -f "$WINEPREFIX/.fonts_installed" ]; then
+    echo "[MT5] Installing Microsoft Core Fonts..."
+    winetricks -q corefonts tahoma 2>/dev/null || true
+    touch "$WINEPREFIX/.fonts_installed"
+    echo "[MT5] Fonts installed."
+fi
+
+# Configure Wine registry for font smoothing
+if [ ! -f "$WINEPREFIX/.registry_configured" ]; then
+    echo "[MT5] Configuring Wine registry..."
+    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f 2>/dev/null
+    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f 2>/dev/null
+    wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f 2>/dev/null
+    touch "$WINEPREFIX/.registry_configured"
+    echo "[MT5] Registry configured."
+fi
+
+# Install MetaTrader 5 if not present
+if [ ! -f "$MT5_FILE" ]; then
+    echo "[MT5] Downloading MetaTrader 5..."
+    curl -sL -o /tmp/mt5setup.exe "$MT5_SETUP_URL"
+    echo "[MT5] Installing MetaTrader 5 (this may take a few minutes)..."
+    wine /tmp/mt5setup.exe /auto
+    rm -f /tmp/mt5setup.exe
+
+    # Wait for installation to complete
+    sleep 30
+
+    if [ -f "$MT5_FILE" ]; then
+        echo "[MT5] MetaTrader 5 installed successfully."
+    else
+        echo "[MT5] Warning: MT5 installation may not have completed. Check manually."
+    fi
+else
+    echo "[MT5] MetaTrader 5 is already installed."
+fi
+
+# Launch MetaTrader 5
+if [ -f "$MT5_FILE" ]; then
+    echo "[MT5] Launching MetaTrader 5..."
+    wine "$MT5_FILE" &
+else
+    echo "[MT5] MetaTrader 5 not found. Please install manually via VNC."
+fi
+
+echo "[MT5] Setup complete."

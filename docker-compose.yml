@@ -1,0 +1,17 @@
+services:
+  metatrader5:
+    build: .
+    image: metatrader5-vnc:latest
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - mt5-data:/config
+    ports:
+      - "${VNC_PORT:-3000}:3000"
+      - "${API_PORT:-8001}:8001"
+    restart: unless-stopped
+
+volumes:
+  mt5-data:

@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+# Wait for MT5 installation to complete
+sleep 5
+
+# Export Wine environment
+export WINEPREFIX="/config/.wine"
+export WINEARCH="win32"
+export WINEDEBUG="-all"
+export DISPLAY=":1"
+
+# Start mt5linux API server
+exec python3 -m mt5linux --host 0.0.0.0 -p 8001 -w wine python.exe
