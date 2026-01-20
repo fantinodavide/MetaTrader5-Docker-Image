@@ -38,8 +38,9 @@ RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetric
     chmod +x /usr/local/bin/winetricks
 
 # Install mt5linux Python library (reusable across instances)
+# Note: mt5linux handles its own numpy dependency
 RUN pip install --break-system-packages --no-cache-dir \
-    "mt5linux>=0.1.9" rpyc plumbum numpy pyxdg
+    "mt5linux>=0.1.9" rpyc plumbum pyxdg
 
 # Copy s6 service definitions and scripts
 COPY root/ /
