@@ -3,10 +3,9 @@ services:
     build: .
     image: gmag11/metatrader5_vnc
     container_name: mt5
-    user: "${UID:-1000}:${GID:-1000}"
     environment:
-      - UID=${UID:-1000}
-      - GID=${GID:-1000}
+      - PUID=${UID:-1000}
+      - PGID=${GID:-1000}
     volumes:
       - mt5-config:/config
     env_file:
