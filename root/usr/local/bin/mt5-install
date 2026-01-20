@@ -4,8 +4,6 @@
 # MetaTrader 5 Installation Script
 # This script installs and configures MT5 in a 64-bit Wine prefix
 
-set -e
-
 # Configuration
 MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
@@ -13,32 +11,44 @@ MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt
 # Export Wine environment
 export WINEPREFIX="/config/.wine"
 export WINEDEBUG="-all"
-export DISPLAY="${DISPLAY:-:1}"
+export DISPLAY=":1"
+export HOME="/config"
 
 echo "[MT5] Starting MetaTrader 5 setup..."
 
+# Ensure /config/.wine exists and has correct ownership
+mkdir -p /config/.wine /config/.cache
+chown -R abc:abc /config/.wine /config/.cache 2>/dev/null || true
+
+# Function to run commands as abc user
+run_as_abc() {
+    s6-setuidgid abc "$@"
+}
+
 # Initialize Wine prefix if it doesn't exist
-if [ ! -d "$WINEPREFIX" ]; then
+if [ ! -d "$WINEPREFIX/drive_c" ]; then
     echo "[MT5] Initializing 64-bit Wine prefix..."
-    wineboot --init
+    run_as_abc wineboot --init
     sleep 5
 fi
 
 # Install core fonts if not done
 if [ ! -f "$WINEPREFIX/.fonts_installed" ]; then
     echo "[MT5] Installing Microsoft Core Fonts..."
-    winetricks -q corefonts tahoma 2>/dev/null || true
+    run_as_abc winetricks -q corefonts tahoma 2>/dev/null || true
     touch "$WINEPREFIX/.fonts_installed"
+    chown abc:abc "$WINEPREFIX/.fonts_installed"
     echo "[MT5] Fonts installed."
 fi
 
 # Configure Wine registry for font smoothing
 if [ ! -f "$WINEPREFIX/.registry_configured" ]; then
     echo "[MT5] Configuring Wine registry..."
-    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f 2>/dev/null
-    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f 2>/dev/null
-    wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f 2>/dev/null
+    run_as_abc wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f 2>/dev/null || true
+    run_as_abc wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f 2>/dev/null || true
+    run_as_abc wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f 2>/dev/null || true
     touch "$WINEPREFIX/.registry_configured"
+    chown abc:abc "$WINEPREFIX/.registry_configured"
     echo "[MT5] Registry configured."
 fi
 
@@ -46,8 +56,9 @@ fi
 if [ ! -f "$MT5_FILE" ]; then
     echo "[MT5] Downloading MetaTrader 5..."
     curl -sL -o /tmp/mt5setup.exe "$MT5_SETUP_URL"
+    chown abc:abc /tmp/mt5setup.exe
     echo "[MT5] Installing MetaTrader 5 (this may take a few minutes)..."
-    wine /tmp/mt5setup.exe /auto
+    run_as_abc wine /tmp/mt5setup.exe /auto
     rm -f /tmp/mt5setup.exe
 
     # Wait for installation to complete
@@ -65,7 +76,7 @@ fi
 # Launch MetaTrader 5
 if [ -f "$MT5_FILE" ]; then
     echo "[MT5] Launching MetaTrader 5..."
-    wine "$MT5_FILE" &
+    run_as_abc wine "$MT5_FILE" &
 else
     echo "[MT5] MetaTrader 5 not found. Please install manually via VNC."
 fi
