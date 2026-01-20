@@ -2,7 +2,6 @@ services:
   mt5:
     build: .
     image: gmag11/metatrader5_vnc
-    container_name: mt5
     environment:
       - PUID=0
       - PGID=0
