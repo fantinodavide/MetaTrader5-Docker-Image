@@ -6,7 +6,6 @@ sleep 5
 
 # Export Wine environment
 export WINEPREFIX="/config/.wine"
-export WINEARCH="win32"
 export WINEDEBUG="-all"
 export DISPLAY=":1"
 

@@ -2,18 +2,16 @@
 # shellcheck shell=bash
 
 # MetaTrader 5 Installation Script
-# This script installs and configures MT5 in a 32-bit Wine prefix
+# This script installs and configures MT5 in a 64-bit Wine prefix
 
 set -e
 
 # Configuration
-MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal.exe"
+MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
-MONO_URL="https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi"
 
 # Export Wine environment
 export WINEPREFIX="/config/.wine"
-export WINEARCH="win32"
 export WINEDEBUG="-all"
 export DISPLAY="${DISPLAY:-:1}"
 
@@ -21,18 +19,9 @@ echo "[MT5] Starting MetaTrader 5 setup..."
 
 # Initialize Wine prefix if it doesn't exist
 if [ ! -d "$WINEPREFIX" ]; then
-    echo "[MT5] Initializing 32-bit Wine prefix..."
+    echo "[MT5] Initializing 64-bit Wine prefix..."
     wineboot --init
     sleep 5
-fi
-
-# Install Mono if not present
-if [ ! -d "$WINEPREFIX/drive_c/windows/mono" ]; then
-    echo "[MT5] Installing Wine Mono..."
-    curl -sL -o /tmp/wine-mono.msi "$MONO_URL"
-    WINEDLLOVERRIDES="mscoree=d" wine msiexec /i /tmp/wine-mono.msi /qn
-    rm -f /tmp/wine-mono.msi
-    echo "[MT5] Mono installed."
 fi
 
 # Install core fonts if not done

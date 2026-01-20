@@ -6,10 +6,9 @@ Run MetaTrader 5 in Docker with web-based VNC access and Python API support.
 
 ## Features
 
-- MetaTrader 5 in an isolated Docker container
-- Web-based VNC access via [KasmVNC](https://github.com/kasmtech/KasmVNC)
+- MetaTrader 5 (64-bit) in an isolated Docker container
+- Web-based VNC access via [LinuxServer Webtop](https://github.com/linuxserver/docker-webtop)
 - Python API access via [mt5linux](https://github.com/lucas-campagna/mt5linux)
-- 32-bit Wine prefix for compatibility with Wine 10.3+
 - Automatic MT5 installation on first run
 
 ## Requirements
@@ -28,7 +27,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-2. Access MetaTrader 5 at `http://localhost:3000`
+2. Access MetaTrader 5 via your reverse proxy or direct container access on port 3000.
 
 First startup takes 5-10 minutes for automatic MT5 installation.
 
@@ -41,23 +40,24 @@ First startup takes 5-10 minutes for automatic MT5 installation.
 | `PUID` | `1000` | User ID for file permissions |
 | `PGID` | `1000` | Group ID for file permissions |
 | `TZ` | `Etc/UTC` | Timezone |
-| `VNC_PORT` | `3000` | KasmVNC web interface port |
-| `API_PORT` | `8001` | mt5linux API port |
 | `CUSTOM_USER` | - | VNC username (optional) |
 | `PASSWORD` | - | VNC password (optional) |
 
-### Running Multiple Instances
+### Network Access
 
-Change ports in `.env` for each instance:
+This image does not expose ports by default. It is designed to be used behind a reverse proxy in the same Docker network. Internal ports:
 
-```bash
-# Instance 1
-VNC_PORT=3001
-API_PORT=8011
+| Port | Service |
+|------|---------|
+| 3000 | KasmVNC web interface |
+| 8001 | mt5linux Python API |
 
-# Instance 2
-VNC_PORT=3002
-API_PORT=8012
+To expose ports directly, add them to your docker-compose.yml:
+
+```yaml
+ports:
+  - "3000:3000"
+  - "8001:8001"
 ```
 
 ## Volume Structure
@@ -91,26 +91,15 @@ mt5.initialize()
 print(mt5.version())
 ```
 
-## Ports
-
-| Port | Service |
-|------|---------|
-| 3000 | KasmVNC web interface |
-| 8001 | mt5linux Python API |
-
 ## Troubleshooting
 
 ### MT5 not starting
 - Check container logs: `docker compose logs -f`
-- Ensure Wine prefix is 32-bit (check for `WINEARCH=win32` in logs)
+- Ensure the Wine prefix is properly initialized
 
-### "Debugger detected" error
-This image uses a 32-bit Wine prefix to avoid this issue with Wine 10.3+.
-If you see this error, delete the volume and restart:
-```bash
-docker compose down -v
-docker compose up -d
-```
+### Permission issues
+- Verify PUID and PGID match your host user
+- Check that the volume has correct permissions
 
 ## License
 
@@ -118,6 +107,5 @@ MIT License - See [LICENSE.md](LICENSE.md)
 
 ## Acknowledgments
 
-- [KasmVNC](https://github.com/kasmtech/KasmVNC)
-- [LinuxServer KasmVNC Base Image](https://github.com/linuxserver/docker-baseimage-kasmvnc)
+- [LinuxServer Webtop](https://github.com/linuxserver/docker-webtop)
 - [mt5linux](https://github.com/lucas-campagna/mt5linux)
