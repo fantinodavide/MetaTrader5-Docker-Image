@@ -1,17 +1,21 @@
 #!/bin/bash
 
 # MT5 Watchdog - Restarts MT5 if not running
-# Runs every 60 seconds
+# Configurable via MT5_WATCHDOG_INTERVAL environment variable (default: 60 seconds)
 
 export WINEPREFIX="/config/.wine"
 export WINEDEBUG="-all"
 export HOME="/config"
+export DISPLAY=":1"
 unset LD_PRELOAD
 
 MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+INTERVAL="${MT5_WATCHDOG_INTERVAL:-60}"
+
+echo "[MT5-Watchdog] Starting with interval: ${INTERVAL}s"
 
 while true; do
-    sleep 60
+    sleep "$INTERVAL"
 
     # Check if MT5 is installed
     if [ ! -f "$MT5_FILE" ]; then

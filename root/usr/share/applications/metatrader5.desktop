@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MetaTrader 5
+Comment=Trading Platform
+Exec=/usr/local/bin/mt5-launch
+Icon=applications-finance
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=false

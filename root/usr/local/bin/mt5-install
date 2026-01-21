@@ -24,6 +24,14 @@ echo "[MT5] WINEPREFIX=$WINEPREFIX"
 echo "[MT5] USER=$(whoami)"
 echo "[MT5] DISPLAY=$DISPLAY"
 
+# Create desktop shortcut
+mkdir -p /config/Desktop
+if [ -f /usr/share/applications/metatrader5.desktop ]; then
+    cp /usr/share/applications/metatrader5.desktop /config/Desktop/
+    chmod +x /config/Desktop/metatrader5.desktop
+    echo "[MT5] Desktop shortcut created"
+fi
+
 # Ensure Wine directories exist
 mkdir -p /config/.wine /config/.cache
 
@@ -43,9 +51,6 @@ if [ ! -d "$WINEPREFIX/drive_c" ]; then
     echo "[MT5] wineboot exit code: $?"
     sleep 5
 fi
-
-# Skip fonts for now - they cause hangs. MT5 will use system fonts.
-# Fonts can be installed later manually via: winetricks corefonts
 
 # Configure Wine registry
 if [ ! -f "$WINEPREFIX/.registry_configured" ]; then

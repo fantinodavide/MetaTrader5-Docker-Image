@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# MT5 Launcher script
+export WINEPREFIX="/config/.wine"
+export WINEDEBUG="-all"
+export HOME="/config"
+unset LD_PRELOAD
+
+MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+
+if [ -f "$MT5_FILE" ]; then
+    wine "$MT5_FILE" &
+else
+    notify-send "MetaTrader 5" "MT5 not installed. Please wait for installation to complete." 2>/dev/null
+fi
