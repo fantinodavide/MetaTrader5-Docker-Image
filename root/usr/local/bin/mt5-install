@@ -32,6 +32,21 @@ if [ -f /usr/share/applications/metatrader5.desktop ]; then
     echo "[MT5] Desktop shortcut created"
 fi
 
+# Fix any Wine-created .desktop files to use mt5-launch
+fix_desktop_files() {
+    for f in /config/Desktop/*.desktop; do
+        [ -f "$f" ] || continue
+        if grep -q "terminal64.exe" "$f" 2>/dev/null; then
+            if ! grep -q "mt5-launch" "$f" 2>/dev/null; then
+                sed -i 's|Exec=.*terminal64.exe.*|Exec=/usr/local/bin/mt5-launch|g' "$f"
+                chmod +x "$f"
+                echo "[MT5] Fixed desktop file: $f"
+            fi
+        fi
+    done
+}
+fix_desktop_files
+
 # Ensure Wine directories exist
 mkdir -p /config/.wine /config/.cache
 
@@ -81,6 +96,8 @@ if [ ! -f "$MT5_FILE" ]; then
             for i in {1..60}; do
                 if [ -f "$MT5_FILE" ]; then
                     echo "[MT5] Installation complete!"
+                    # Fix any desktop files created by installer
+                    fix_desktop_files
                     break
                 fi
                 sleep 5
