@@ -9,6 +9,7 @@ services:
       - CUSTOM_USER=${CUSTOM_USER}
       - PASSWORD=${PASSWORD}
       - MT5_WATCHDOG_INTERVAL=${MT5_WATCHDOG_INTERVAL:-60}
+      - TITLE=${TITLE:-MetaTrader 5}
     volumes:
       - mt5-data:/config
     restart: unless-stopped
