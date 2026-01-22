@@ -148,8 +148,10 @@ if [ -d "$MT5_DIR" ]; then
     echo "[MT5] Fixing MT5 directory permissions..."
     chmod -R u+rwX "$MT5_DIR" 2>/dev/null || true
 
-    # Ensure Tester directory exists and is writable
-    mkdir -p "$MT5_DIR/Tester"
+    # Ensure Tester directories exist and are writable (needed for Strategy Tester)
+    mkdir -p "$MT5_DIR/Tester/bases"
+    mkdir -p "$MT5_DIR/Tester/cache"
+    mkdir -p "$MT5_DIR/Tester/logs"
     chmod -R u+rwX "$MT5_DIR/Tester" 2>/dev/null || true
 
     echo "[MT5] Permissions fixed"
