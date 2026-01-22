@@ -156,6 +156,18 @@ if ! is_python_package_installed "pyxdg"; then
     pip install --break-system-packages --no-cache-dir pyxdg
 fi
 
+# Create Strategy Tester directories if they don't exist
+mt5_dir='/config/.wine/drive_c/Program Files/MetaTrader 5'
+if [ -d "$mt5_dir" ]; then
+    show_message "[8/9] Creating Strategy Tester directories..."
+    mkdir -p "$mt5_dir/Tester/bases"
+    mkdir -p "$mt5_dir/Tester/cache"
+    mkdir -p "$mt5_dir/Tester/logs"
+    mkdir -p "$mt5_dir/Tester/Agent-127.0.0.1-3000"
+    # Ensure proper permissions
+    chmod -R 777 "$mt5_dir/Tester"
+fi
+
 # NOW launch MetaTrader 5 (after all Wine installations are complete)
 if [ -e "$mt5file" ]; then
     show_message "[8/9] Launching MetaTrader 5..."
