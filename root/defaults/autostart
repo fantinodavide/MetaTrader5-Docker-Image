@@ -1,1 +1,2 @@
-/Metatrader/start.sh
+# MT5 is started via s6 services
+# This file is intentionally minimal

@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# MetaTrader 5 Installation Script
+# Runs via desktop autostart after the display is ready
+
+LOG_FILE="/config/mt5-install.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "=========================================="
+echo "[MT5] Starting at $(date)"
+echo "=========================================="
+
+# Configuration
+MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+MT5_DIR="/config/.wine/drive_c/Program Files/MetaTrader 5"
+MT5_SETUP_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+
+# Export Wine environment - clear LD_PRELOAD to avoid Selkies 32-bit library errors
+export WINEPREFIX="/config/.wine"
+export WINEDEBUG="-all"
+export HOME="/config"
+unset LD_PRELOAD
+
+echo "[MT5] WINEPREFIX=$WINEPREFIX"
+echo "[MT5] USER=$(whoami)"
+echo "[MT5] DISPLAY=$DISPLAY"
+
+# Create desktop shortcut
+mkdir -p /config/Desktop
+if [ -f /usr/share/applications/metatrader5.desktop ]; then
+    cp /usr/share/applications/metatrader5.desktop /config/Desktop/
+    chmod +x /config/Desktop/metatrader5.desktop
+    echo "[MT5] Desktop shortcut created"
+fi
+
+# Fix any Wine-created .desktop files to use mt5-launch
+fix_desktop_files() {
+    for f in /config/Desktop/*.desktop; do
+        [ -f "$f" ] || continue
+        if grep -q "terminal64.exe" "$f" 2>/dev/null; then
+            if ! grep -q "mt5-launch" "$f" 2>/dev/null; then
+                sed -i 's|Exec=.*terminal64.exe.*|Exec=/usr/local/bin/mt5-launch|g' "$f"
+                chmod +x "$f"
+                echo "[MT5] Fixed desktop file: $f"
+            fi
+        fi
+    done
+}
+fix_desktop_files
+
+# Ensure Wine directories exist
+mkdir -p /config/.wine /config/.cache
+
+# Check if old 32-bit prefix exists and remove it
+if [ -f "$WINEPREFIX/system.reg" ]; then
+    if grep -q "#arch=win32" "$WINEPREFIX/system.reg" 2>/dev/null; then
+        echo "[MT5] Found 32-bit Wine prefix, removing..."
+        rm -rf "$WINEPREFIX"
+        mkdir -p "$WINEPREFIX"
+    fi
+fi
+
+# Initialize Wine prefix if it doesn't exist
+if [ ! -d "$WINEPREFIX/drive_c" ]; then
+    echo "[MT5] Initializing Wine prefix..."
+    wineboot --init
+    echo "[MT5] wineboot exit code: $?"
+    sleep 5
+fi
+
+# Configure Wine registry and file associations
+if [ ! -f "$WINEPREFIX/.registry_configured" ]; then
+    echo "[MT5] Configuring Wine registry..."
+    wine reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d "2" /f 2>&1 || true
+    wine reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f 2>&1 || true
+    touch "$WINEPREFIX/.registry_configured"
+    echo "[MT5] Registry done"
+fi
+
+# Set up Wine as default for Windows executables
+setup_wine_associations() {
+    echo "[MT5] Setting up Wine file associations..."
+
+    # Create wine wrapper for xdg-open
+    mkdir -p /config/.local/share/applications
+
+    # Register Wine for .exe files
+    cat > /config/.local/share/applications/wine.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Wine Windows Program Loader
+Exec=env WINEPREFIX=/config/.wine wine %f
+MimeType=application/x-ms-dos-executable;application/x-msdos-program;application/x-exe;application/x-msdownload;
+NoDisplay=true
+EOF
+
+    # Update MIME database
+    if command -v update-desktop-database &> /dev/null; then
+        update-desktop-database /config/.local/share/applications 2>/dev/null || true
+    fi
+
+    # Set Wine as default for exe files
+    if command -v xdg-mime &> /dev/null; then
+        xdg-mime default wine.desktop application/x-ms-dos-executable 2>/dev/null || true
+        xdg-mime default wine.desktop application/x-msdos-program 2>/dev/null || true
+    fi
+
+    echo "[MT5] File associations configured"
+}
+setup_wine_associations
+
+# Install MetaTrader 5 if not present
+if [ ! -f "$MT5_FILE" ]; then
+    echo "[MT5] Downloading MetaTrader 5..."
+    curl -sL -o /tmp/mt5setup.exe "$MT5_SETUP_URL"
+
+    if [ -f /tmp/mt5setup.exe ]; then
+        FILE_SIZE=$(stat -c%s /tmp/mt5setup.exe 2>/dev/null || echo "0")
+        echo "[MT5] Downloaded $FILE_SIZE bytes"
+
+        if [ "$FILE_SIZE" -gt 1000000 ]; then
+            echo "[MT5] Running installer (this takes a few minutes)..."
+            wine /tmp/mt5setup.exe /auto
+            echo "[MT5] Installer exit code: $?"
+            rm -f /tmp/mt5setup.exe
+
+            # Wait for installation
+            echo "[MT5] Waiting for installation..."
+            for i in {1..60}; do
+                if [ -f "$MT5_FILE" ]; then
+                    echo "[MT5] Installation complete!"
+                    # Fix any desktop files created by installer
+                    fix_desktop_files
+                    break
+                fi
+                sleep 5
+            done
+        else
+            echo "[MT5] ERROR: Download seems incomplete (only $FILE_SIZE bytes)"
+        fi
+    else
+        echo "[MT5] ERROR: Download failed!"
+    fi
+fi
+
+# Fix permissions on MT5 directories (needed for Strategy Tester)
+if [ -d "$MT5_DIR" ]; then
+    echo "[MT5] Fixing MT5 directory permissions..."
+    chmod -R u+rwX "$MT5_DIR" 2>/dev/null || true
+
+    # Ensure Tester directories exist and are writable (needed for Strategy Tester)
+    mkdir -p "$MT5_DIR/Tester/bases"
+    mkdir -p "$MT5_DIR/Tester/cache"
+    mkdir -p "$MT5_DIR/Tester/logs"
+    chmod -R u+rwX "$MT5_DIR/Tester" 2>/dev/null || true
+
+    echo "[MT5] Permissions fixed"
+fi
+
+# Show what's in Program Files
+echo "[MT5] Checking installation:"
+ls -la "$WINEPREFIX/drive_c/Program Files/" 2>&1 | head -20
+
+# Launch MetaTrader 5
+if [ -f "$MT5_FILE" ]; then
+    echo "[MT5] Launching MetaTrader 5..."
+    wine "$MT5_FILE" &
+    echo "[MT5] SUCCESS - MT5 launched!"
+else
+    echo "[MT5] ERROR: terminal64.exe not found"
+    echo "[MT5] Contents of MT5 folder (if exists):"
+    ls -la "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/" 2>&1 || echo "MT5 folder not found"
+fi
+
+echo "[MT5] Script completed at $(date)"
