@@ -131,6 +131,10 @@ The container closes it cleanly on stop, as long as Docker waits long enough:
 `docker-compose.yml` sets `stop_grace_period: 1m`. The shutdown is logged in
 `/config/mt5-shutdown.log`.
 
+MetaTrader 5 also deletes saved accounts ("Accounts deleted due security reason" in its
+journal) when the machine looks different. `docker-compose.yml` keeps the hostname and the
+MAC address on the project's default network fixed for that reason.
+
 ### Upgrading from the bind-mounted `./config` layout
 
 Older versions of `docker-compose.yml` stored `/config` in `./config` next to the compose file.
