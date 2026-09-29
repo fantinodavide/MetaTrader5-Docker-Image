@@ -69,8 +69,7 @@ Browsers only allow clipboard access over HTTPS, so prefer 3001 or a TLS-termina
 
 ## Volume Structure
 
-All instance data lives in `/config`, which `docker-compose.yml` bind-mounts from `./config`
-on the host:
+All instance data lives in `/config`:
 
 ```
 /config/
