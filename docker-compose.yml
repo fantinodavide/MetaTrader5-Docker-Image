@@ -12,8 +12,5 @@ services:
       - MT5_WATCHDOG_INTERVAL=${MT5_WATCHDOG_INTERVAL:-}
       - MT5_CMD_OPTIONS=${MT5_CMD_OPTIONS:-}
     volumes:
-      - mt5-data:/config
+      - ./config:/config
     restart: unless-stopped
-
-volumes:
-  mt5-data:
