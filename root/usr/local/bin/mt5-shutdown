@@ -6,6 +6,8 @@ source /usr/local/lib/mt5/common.sh
 # Keeps the watchdog from starting the terminal again once it has closed.
 # Gives up after 10s if mt5-install is still running.
 mt5_lock "$MT5_INSTALL_LOCK" -w 10
+# In the volume: docker logs go away with the container on a redeploy.
+mt5_log_to /config/mt5-shutdown.log
 
 mt5_running || exit 0
 

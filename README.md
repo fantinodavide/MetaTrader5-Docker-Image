@@ -80,7 +80,8 @@ All instance data lives in `/config`:
 │               └── Tester/      # Strategy Tester data
 ├── Desktop/                     # Desktop shortcuts
 ├── mt5-install.log              # Setup log of the current session (.1 = previous)
-└── mt5-watchdog.log             # Watchdog log of the current session (.1 = previous)
+├── mt5-watchdog.log             # Watchdog log of the current session (.1 = previous)
+└── mt5-shutdown.log             # Log of the last shutdown (.1 = the one before)
 ```
 
 ## How It Works
@@ -128,7 +129,7 @@ alone; fix their ownership on the host.
 MetaTrader 5 saves accounts only when it exits cleanly and "Save password" is ticked.
 The container closes it cleanly on stop, as long as Docker waits long enough:
 `docker-compose.yml` sets `stop_grace_period: 1m`. The shutdown is logged in
-`docker logs <container>`.
+`/config/mt5-shutdown.log`.
 
 ### Upgrading from the bind-mounted `./config` layout
 
