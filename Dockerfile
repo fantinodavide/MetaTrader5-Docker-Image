@@ -1,9 +1,5 @@
 FROM lscr.io/linuxserver/webtop:debian-xfce
 
-ARG BUILD_DATE
-ARG VERSION
-LABEL build_version="MetaTrader5 Docker:- ${VERSION} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="gmartin"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 
 # winemenubuilder is disabled because it generates launchers and file

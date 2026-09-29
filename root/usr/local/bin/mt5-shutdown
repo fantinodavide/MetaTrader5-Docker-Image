@@ -1,0 +1,22 @@
+#!/bin/bash
+# Close MetaTrader 5 the way File > Exit does, so it writes its accounts and
+# settings to disk. Called by the svc-mt5-shutdown s6 service on container stop.
+source /usr/local/lib/mt5/common.sh
+
+# Keeps the watchdog from starting the terminal again once it has closed.
+# Gives up after 10s if mt5-install is still running.
+mt5_lock "$MT5_INSTALL_LOCK" -w 10
+
+mt5_running || exit 0
+
+mt5_log "Closing MetaTrader 5"
+# Without /f, taskkill asks the terminal's windows to close.
+wine taskkill /im terminal64.exe
+for _ in $(seq 30); do
+    if ! mt5_running; then
+        mt5_log "MetaTrader 5 closed"
+        exit 0
+    fi
+    sleep 1
+done
+mt5_log "MetaTrader 5 did not close within 30s"

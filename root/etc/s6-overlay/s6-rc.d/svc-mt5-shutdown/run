@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+# Runs when the container stops. It depends on svc-de, so s6 runs it while the
+# desktop is still up; svc-de's own shutdown kills MetaTrader 5 before it can
+# save its accounts and settings.
+# A failure must not hold up the rest of the shutdown.
+s6-setuidgid abc /usr/local/bin/mt5-shutdown || true

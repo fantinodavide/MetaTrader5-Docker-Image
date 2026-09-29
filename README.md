@@ -30,9 +30,6 @@ docker compose up -d
 Open the web desktop through your reverse proxy (see [Network Access](#network-access)).
 The first start takes a few minutes while MetaTrader 5 is downloaded and installed.
 
-Prebuilt images are published to `ghcr.io/fantinodavide/metatrader5-docker-image` for
-every tag; use that as `image:` instead of `build: .` if you don't want to build locally.
-
 ## Configuration
 
 ### Environment Variables
@@ -93,6 +90,8 @@ All instance data lives in `/config`:
   run and starts it.
 - `mt5-watchdog` (desktop autostart) starts MetaTrader 5 again whenever it isn't running.
 - `mt5-launch` backs the desktop and menu shortcuts.
+- `svc-mt5-shutdown` (s6) closes MetaTrader 5 cleanly when the container stops, before the
+  desktop goes down, so it saves its accounts and settings.
 
 ## Troubleshooting
 
@@ -115,6 +114,29 @@ docker exec -it -u abc -e HOME=/config <container> winetricks -q corefonts tahom
 Files in `/config` are handed back to `PUID`/`PGID` on every start, so restarting the
 container fixes files copied in as root. Directories bind-mounted inside `/config` are left
 alone; fix their ownership on the host.
+
+### MT5 asks for the login again after a restart
+
+MetaTrader 5 saves accounts only when it exits cleanly and "Save password" is ticked.
+The container closes it cleanly on stop, as long as Docker waits long enough:
+`docker-compose.yml` sets `stop_grace_period: 1m`. The shutdown is logged in
+`docker logs <container>`.
+
+### Upgrading from the bind-mounted `./config` layout
+
+Older versions of `docker-compose.yml` stored `/config` in `./config` next to the compose file.
+It now uses the named volume `mt5-data`, so the first start after upgrading installs
+MetaTrader 5 from scratch. To bring the old data over, stop the stack and copy it into the
+volume (`docker volume ls` shows its name, `<project>_mt5-data`):
+
+```bash
+docker compose stop
+docker run --rm -v "$PWD/config:/old:ro" -v <project>_mt5-data:/new alpine cp -a /old/. /new/
+docker compose start
+```
+
+On Dokploy, `./config` lives in the deployment's code folder, which Dokploy clears on each
+deploy: copy it out of `/etc/dokploy/compose/<app>/code/config` before deploying this version.
 
 ### Upgrading from a 32-bit image
 
