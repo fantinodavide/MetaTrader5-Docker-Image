@@ -1,30 +1,28 @@
 #!/bin/bash
+# Start MetaTrader 5 again whenever it is not running.
+# MT5_WATCHDOG_INTERVAL: seconds between checks (default 60, 0 disables).
+source /usr/local/lib/mt5/common.sh
 
-# MT5 Watchdog - Restarts MT5 if not running
-# Configurable via MT5_WATCHDOG_INTERVAL environment variable (default: 60 seconds)
+# One watchdog per container, even if the desktop session restarts.
+mt5_lock /tmp/mt5-watchdog.lock -n
 
-export WINEPREFIX="/config/.wine"
-export WINEDEBUG="-all"
-export HOME="/config"
-export DISPLAY=":1"
-unset LD_PRELOAD
+mt5_log_to /config/mt5-watchdog.log
 
-MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 INTERVAL="${MT5_WATCHDOG_INTERVAL:-60}"
+if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]]; then
+    mt5_log "Invalid MT5_WATCHDOG_INTERVAL '$INTERVAL', using 60"
+    INTERVAL=60
+fi
+if [ "$INTERVAL" -eq 0 ]; then
+    mt5_log "Disabled"
+    exit 0
+fi
 
-echo "[MT5-Watchdog] Starting with interval: ${INTERVAL}s"
-
-while true; do
-    sleep "$INTERVAL"
-
-    # Check if MT5 is installed
-    if [ ! -f "$MT5_FILE" ]; then
-        continue
-    fi
-
-    # Check if terminal64.exe is running
-    if ! pgrep -f "terminal64.exe" > /dev/null 2>&1; then
-        echo "[MT5-Watchdog] $(date): MT5 not running, starting..."
-        wine "$MT5_FILE" &
+mt5_log "Checking every ${INTERVAL}s"
+while sleep "$INTERVAL"; do
+    # Skip while mt5-install runs: it starts the terminal itself.
+    if [ -f "$MT5_EXE" ] && ! mt5_running && flock -n "$MT5_INSTALL_LOCK" true; then
+        mt5_log "MetaTrader 5 is not running, starting it"
+        mt5_start
     fi
 done

@@ -1,0 +1,7 @@
+[Default Applications]
+application/x-msdownload=wine.desktop
+application/x-ms-dos-executable=wine.desktop
+application/vnd.microsoft.portable-executable=wine.desktop
+application/x-dosexec=wine.desktop
+application/x-ms-ne-executable=wine.desktop
+application/x-msi=wine.desktop

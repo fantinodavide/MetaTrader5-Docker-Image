@@ -1,15 +1,9 @@
 #!/bin/bash
+# Start MetaTrader 5 from the desktop and menu shortcuts.
+source /usr/local/lib/mt5/common.sh
 
-# MT5 Launcher script
-export WINEPREFIX="/config/.wine"
-export WINEDEBUG="-all"
-export HOME="/config"
-unset LD_PRELOAD
-
-MT5_FILE="/config/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
-
-if [ -f "$MT5_FILE" ]; then
-    wine "$MT5_FILE" &
+if [ -f "$MT5_EXE" ]; then
+    mt5_start
 else
-    notify-send "MetaTrader 5" "MT5 not installed. Please wait for installation to complete." 2>/dev/null
+    notify-send "MetaTrader 5" "MetaTrader 5 is still being installed, please wait." 2>/dev/null
 fi
