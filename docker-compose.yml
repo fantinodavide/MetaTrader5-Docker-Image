@@ -1,6 +1,9 @@
 services:
   metatrader5:
     build: .
+    # Wine uses the hostname as the Windows computer name, and MT5 ties saved
+    # logins to it. Docker gives each new container a random one.
+    hostname: metatrader5
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
