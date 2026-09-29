@@ -33,6 +33,13 @@ if [ ! -f "$WINEPREFIX/.registry_configured" ]; then
         touch "$WINEPREFIX/.registry_configured"
 fi
 
+# Wine keeps the DPI the desktop had when the prefix was created, so a prefix
+# created at another Selkies DPI stays scaled. Follow the desktop's DPI.
+dpi=$(xrdb -query 2>/dev/null | awk '$1 == "Xft.dpi:" { print int($2) }')
+[[ "$dpi" =~ ^[0-9]+$ ]] && [ "$dpi" -gt 0 ] || dpi=96
+mt5_log "Setting Wine DPI to $dpi"
+wine reg add 'HKCU\Control Panel\Desktop' /v LogPixels /t REG_DWORD /d "$dpi" /f
+
 mkdir -p /config/Desktop
 install -m 755 /usr/share/applications/metatrader5.desktop /config/Desktop/
 
