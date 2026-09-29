@@ -23,9 +23,12 @@ Run MetaTrader 5 in Docker with web-based VNC access.
 ```bash
 git clone https://github.com/fantinodavide/MetaTrader5-Docker-Image
 cd MetaTrader5-Docker-Image
-cp .env.example .env   # optional, adjust as needed
+cp .env.example .env   # set MT5_MAC_ADDRESS, adjust the rest as needed
 docker compose up -d
 ```
+
+`docker-compose.yml` is set up for [Dokploy](https://dokploy.com) and joins its external
+`dokploy-network`. Outside Dokploy, create it once with `docker network create dokploy-network`.
 
 Open the web desktop through your reverse proxy (see [Network Access](#network-access)).
 The first start takes a few minutes while MetaTrader 5 is downloaded and installed.
@@ -44,6 +47,7 @@ The first start takes a few minutes while MetaTrader 5 is downloaded and install
 | `TITLE` | `MetaTrader 5` | Browser tab / PWA name |
 | `SELKIES_SCALING_DPI` | `96` | Desktop scaling: `96` = 100%, `120` = 125%, `144` = 150% (steps of 24, up to 288). Append `\|locked` to hide the setting from the web UI |
 | `MT5_WATCHDOG_INTERVAL` | `60` | Seconds between watchdog checks, `0` disables the watchdog |
+| `MT5_MAC_ADDRESS` | required | MAC address on `dokploy-network`, unique per instance on the server (for example `02:00:00:4d:35:01`, `02:00:00:4d:35:02`) |
 | `MT5_CMD_OPTIONS` | - | Extra command line options for `terminal64.exe`, e.g. `/portable` |
 
 ### Network Access
@@ -132,8 +136,9 @@ The container closes it cleanly on stop, as long as Docker waits long enough:
 `/config/mt5-shutdown.log`.
 
 MetaTrader 5 also deletes saved accounts ("Accounts deleted due security reason" in its
-journal) when the machine looks different. `docker-compose.yml` keeps the hostname and the
-MAC address on the project's default network fixed for that reason.
+journal) when the machine looks different, including when a network adapter's MAC changes.
+Docker assigns new MACs on every start, so `docker-compose.yml` fixes the hostname and the
+MAC on both networks. Give each instance its own `MT5_MAC_ADDRESS`.
 
 ### Upgrading from the bind-mounted `./config` layout
 

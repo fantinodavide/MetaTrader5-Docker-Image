@@ -14,18 +14,24 @@ services:
       - SELKIES_SCALING_DPI=${SELKIES_SCALING_DPI:-96}
       - MT5_WATCHDOG_INTERVAL=${MT5_WATCHDOG_INTERVAL:-}
       - MT5_CMD_OPTIONS=${MT5_CMD_OPTIONS:-}
+    # MetaTrader 5 deletes its saved accounts "due security reason" when a
+    # network adapter's MAC changes, and Docker assigns new ones on every start.
     networks:
       default:
-        # MetaTrader 5 deletes its saved accounts "due security reason" when
-        # the network adapter's MAC changes, and Docker picks a random one on
-        # every start. Each compose project has its own default network, so
-        # instances don't clash.
+        # Each compose project has its own default network: no clash.
         mac_address: "02:00:00:4d:54:35"
+      dokploy-network:
+        # Shared by all Dokploy apps: every instance needs its own value.
+        mac_address: ${MT5_MAC_ADDRESS:?set MT5_MAC_ADDRESS to a MAC unique to this instance, e.g. 02:00:00:4d:35:01}
     volumes:
       - mt5-data:/config
     restart: unless-stopped
     # Time for MetaTrader 5 to save and close before Docker kills it
     stop_grace_period: 1m
+
+networks:
+  dokploy-network:
+    external: true
 
 volumes:
   mt5-data:
