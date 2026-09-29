@@ -73,11 +73,11 @@ All instance data lives in `/config`:
 /config/
 ├── .wine/                       # Wine prefix
 │   └── drive_c/
-│       ├── Program Files/
-│       │   └── MetaTrader 5/    # MT5 installation
-│       │       ├── MQL5/        # Your EAs, indicators and scripts
-│       │       └── Tester/      # Strategy Tester data
-│       └── users/abc/AppData/   # MT5 account data
+│       └── Program Files/
+│           └── MetaTrader 5/    # MT5 installation and data folder
+│               ├── Config/      # Accounts (accounts.dat) and settings
+│               ├── MQL5/        # Your EAs, indicators and scripts
+│               └── Tester/      # Strategy Tester data
 ├── Desktop/                     # Desktop shortcuts
 ├── mt5-install.log              # Setup log of the current session (.1 = previous)
 └── mt5-watchdog.log             # Watchdog log of the current session (.1 = previous)
