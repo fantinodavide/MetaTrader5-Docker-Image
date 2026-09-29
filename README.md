@@ -42,6 +42,7 @@ The first start takes a few minutes while MetaTrader 5 is downloaded and install
 | `CUSTOM_USER` | `abc` | Web desktop username |
 | `PASSWORD` | - | Web desktop password (no login when empty) |
 | `TITLE` | `MetaTrader 5` | Browser tab / PWA name |
+| `SELKIES_SCALING_DPI` | `96` | Desktop scaling: `96` = 100%, `120` = 125%, `144` = 150% (steps of 24, up to 288). Append `\|locked` to hide the setting from the web UI |
 | `MT5_WATCHDOG_INTERVAL` | `60` | Seconds between watchdog checks, `0` disables the watchdog |
 | `MT5_CMD_OPTIONS` | - | Extra command line options for `terminal64.exe`, e.g. `/portable` |
 
@@ -108,6 +109,13 @@ If the installer download failed, restarting the container retries it.
 ```bash
 docker exec -it -u abc -e HOME=/config <container> winetricks -q corefonts tahoma
 ```
+
+### UI too large or too small
+
+Set `SELKIES_SCALING_DPI` (see [Environment Variables](#environment-variables)) and restart
+the container. The web UI's sidebar changes the DPI too, but MetaTrader 5 reads it only when
+it starts: after changing it there, close MT5 with File > Exit and the watchdog starts it
+again at the new size.
 
 ### Permission errors
 
