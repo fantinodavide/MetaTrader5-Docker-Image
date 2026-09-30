@@ -23,12 +23,9 @@ Run MetaTrader 5 in Docker with web-based VNC access.
 ```bash
 git clone https://github.com/fantinodavide/MetaTrader5-Docker-Image
 cd MetaTrader5-Docker-Image
-cp .env.example .env   # set MT5_MAC_ADDRESS, adjust the rest as needed
+cp .env.example .env   # optional, adjust as needed
 docker compose up -d
 ```
-
-`docker-compose.yml` is set up for [Dokploy](https://dokploy.com) and joins its external
-`dokploy-network`. Outside Dokploy, create it once with `docker network create dokploy-network`.
 
 Open the web desktop through your reverse proxy (see [Network Access](#network-access)).
 The first start takes a few minutes while MetaTrader 5 is downloaded and installed.
@@ -47,7 +44,6 @@ The first start takes a few minutes while MetaTrader 5 is downloaded and install
 | `TITLE` | `MetaTrader 5` | Browser tab / PWA name |
 | `SELKIES_SCALING_DPI` | `96` | Desktop scaling: `96` = 100%, `120` = 125%, `144` = 150% (steps of 24, up to 288). Append `\|locked` to hide the setting from the web UI |
 | `MT5_WATCHDOG_INTERVAL` | `60` | Seconds between watchdog checks, `0` disables the watchdog |
-| `MT5_MAC_ADDRESS` | required | MAC address on `dokploy-network`, unique per instance on the server (for example `02:00:00:4d:35:01`, `02:00:00:4d:35:02`) |
 | `MT5_CMD_OPTIONS` | - | Extra command line options for `terminal64.exe`, e.g. `/portable` |
 
 ### Network Access
@@ -96,6 +92,8 @@ All instance data lives in `/config`:
   run and starts it.
 - `mt5-watchdog` (desktop autostart) starts MetaTrader 5 again whenever it isn't running.
 - `mt5-launch` backs the desktop and menu shortcuts.
+- `libmt5net.so` (`src/mt5net.c`, preloaded into Wine) gives Wine a fixed network adapter
+  identity, so MetaTrader 5 keeps its saved logins across restarts.
 - `svc-mt5-shutdown` (s6) closes MetaTrader 5 cleanly when the container stops, before the
   desktop goes down, so it saves its accounts and settings.
 
@@ -136,9 +134,11 @@ The container closes it cleanly on stop, as long as Docker waits long enough:
 `/config/mt5-shutdown.log`.
 
 MetaTrader 5 also deletes saved accounts ("Accounts deleted due security reason" in its
-journal) when the machine looks different, including when a network adapter's MAC changes.
-Docker assigns new MACs on every start, so `docker-compose.yml` fixes the hostname and the
-MAC on both networks. Give each instance its own `MT5_MAC_ADDRESS`.
+journal) when the machine looks different. Docker changes the hostname and the network
+adapters (MAC addresses, interface numbers and names) on every start, so
+`docker-compose.yml` fixes the hostname and `src/mt5net.c`, loaded into every Wine process,
+shows Wine the same two adapters (`lo` and `eth0`, fixed MAC) every time. The container's
+real networking is unchanged.
 
 ### Upgrading from the bind-mounted `./config` layout
 
