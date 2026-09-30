@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Wine Windows Program Loader
-Exec=env LD_PRELOAD=/usr/local/lib/mt5/libmt5net.so wine start /unix %f
+Exec=env -u LD_PRELOAD wine start /unix %f
 MimeType=application/x-msdownload;application/x-ms-dos-executable;application/vnd.microsoft.portable-executable;application/x-dosexec;application/x-ms-ne-executable;application/x-msi;
 Icon=wine
 NoDisplay=true

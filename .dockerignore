@@ -1,4 +1,3 @@
-# The Dockerfile only uses root/ and src/
+# The Dockerfile only copies root/
 *
 !root/
-!src/

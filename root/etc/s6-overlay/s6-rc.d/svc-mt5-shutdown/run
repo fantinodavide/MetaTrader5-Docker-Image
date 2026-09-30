@@ -3,5 +3,11 @@
 # Runs when the container stops. It depends on svc-de, so s6 runs it while the
 # desktop is still up; svc-de's own shutdown kills MetaTrader 5 before it can
 # save its accounts and settings.
+#
+# svc-de in turn depends on svc-dbus (svc-de/dependencies.d/svc-dbus, added by
+# this image): nothing else depends on the system D-Bus, so s6 would stop it
+# first, and a MetaTrader 5 that closes without it saves an accounts.dat that
+# it deletes "due security reason" at the next start.
+#
 # A failure must not hold up the rest of the shutdown.
 s6-setuidgid abc /usr/local/bin/mt5-shutdown || true

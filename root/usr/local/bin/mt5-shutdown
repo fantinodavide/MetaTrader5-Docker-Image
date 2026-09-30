@@ -30,10 +30,9 @@ if mt5_running; then
     fi
 fi
 
-# wineserver writes the registry to disk only when it exits, which it does
-# once the last Wine process has ended. The desktop's shutdown kills it
-# before that, and MT5 then deletes its saved accounts "due security reason"
-# at the next start.
+# wineserver writes the registry to disk when it exits, which it does once
+# the last Wine process has ended. Give it the time before the desktop's
+# shutdown kills the session.
 if timeout 15 wineserver -w; then
     mt5_log "Wine shut down"
 else

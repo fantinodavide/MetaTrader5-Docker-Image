@@ -92,10 +92,9 @@ All instance data lives in `/config`:
   run and starts it.
 - `mt5-watchdog` (desktop autostart) starts MetaTrader 5 again whenever it isn't running.
 - `mt5-launch` backs the desktop and menu shortcuts.
-- `libmt5net.so` (`src/mt5net.c`, preloaded into Wine) gives Wine a fixed network adapter
-  identity, so MetaTrader 5 keeps its saved logins across restarts.
 - `svc-mt5-shutdown` (s6) stops the watchdog, closes MetaTrader 5 and waits for Wine to exit
-  when the container stops, before the desktop goes down, so both save their state.
+  when the container stops, so both save their state. It runs before the desktop goes down,
+  and the desktop service is made to depend on `svc-dbus`, so the system D-Bus is still up.
 
 ## Troubleshooting
 
@@ -129,17 +128,15 @@ alone; fix their ownership on the host.
 ### MT5 asks for the login again after a restart
 
 MetaTrader 5 deletes its saved accounts ("Accounts deleted due security reason" in its
-journal) when Wine's registry lost its last session's changes. Wine writes the registry to
-disk only when `wineserver` exits, so on container stop `mt5-shutdown` closes MetaTrader 5
-and then waits for Wine to exit before the desktop goes down. Docker has to wait long
-enough: `docker-compose.yml` sets `stop_grace_period: 90s`. The shutdown is logged in
-`/config/mt5-shutdown.log` and should end with `Wine shut down`.
+journal) at the next start when it closed while the system D-Bus was already down: Wine then
+reports the machine differently, and MetaTrader 5 saves `accounts.dat` bound to that. On
+container stop s6 used to stop D-Bus first, because nothing depended on it. This image adds
+`svc-dbus` to the desktop service's dependencies, and `mt5-shutdown` closes MetaTrader 5
+before the desktop goes down.
 
-MetaTrader 5 also checks that the machine looks the same. Docker changes the hostname and the network
-adapters (MAC and IP addresses, interface numbers and names) on every start, so
-`docker-compose.yml` fixes the hostname and `src/mt5net.c`, loaded into every Wine process,
-shows Wine the same two adapters (`lo` and `eth0`, fixed MAC and IP) every time. The
-container's real networking is unchanged.
+Docker has to wait long enough for that: `docker-compose.yml` sets `stop_grace_period: 90s`.
+The shutdown is logged in `/config/mt5-shutdown.log` and should end with `Wine shut down`.
+Changing MAC and IP addresses, interface names and the hostname do not cause this.
 
 ### Upgrading from the bind-mounted `./config` layout
 

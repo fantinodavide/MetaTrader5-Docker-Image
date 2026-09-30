@@ -4,11 +4,9 @@
 
 export HOME="/config"
 export DISPLAY="${DISPLAY:-:1}"
-# Replaces Selkies' preloaded libraries with a fixed network adapter identity
-# (src/mt5net.c): MT5 deletes its saved logins when the adapters change, and
-# Docker changes them on every start. 32-bit Wine processes skip it with a
-# harmless "wrong ELF class" warning.
-export LD_PRELOAD="/usr/local/lib/mt5/libmt5net.so"
+# Selkies preloads 64-bit interposer libraries that 32-bit Wine processes
+# can't load.
+unset LD_PRELOAD
 
 MT5_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
 MT5_EXE="$MT5_DIR/terminal64.exe"

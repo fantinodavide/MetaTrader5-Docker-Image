@@ -1,12 +1,3 @@
-# Same Debian release as the webtop image, so the library links against the
-# same glibc.
-FROM debian:trixie-slim AS mt5net
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libc6-dev && \
-    rm -rf /var/lib/apt/lists/*
-COPY src/mt5net.c /src/
-RUN gcc -shared -fPIC -O2 -Wall -Wextra -o /libmt5net.so /src/mt5net.c
-
 FROM lscr.io/linuxserver/webtop:debian-xfce
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
@@ -36,8 +27,6 @@ RUN dpkg --add-architecture i386 && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY root/ /
-# Fixed network adapter identity for Wine, see src/mt5net.c
-COPY --from=mt5net /libmt5net.so /usr/local/lib/mt5/
 # Register the baked-in wine.desktop so file managers offer it for .exe files
 RUN update-desktop-database /usr/share/applications
 
