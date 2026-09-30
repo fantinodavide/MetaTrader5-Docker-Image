@@ -1,14 +1,19 @@
 #!/bin/bash
 # Close MetaTrader 5 the way File > Exit does, then let Wine shut down, so both
 # write their state to disk. Called by the svc-mt5-shutdown s6 service on
-# container stop.
+# container stop; it stops the watchdog, so it is not for use at other times.
 source /usr/local/lib/mt5/common.sh
 
-# Keeps the watchdog from starting the terminal again once it has closed.
-# Gives up after 10s if mt5-install is still running.
+# Keeps mt5-install from running meanwhile. Gives up after 10s if it is still
+# running.
 mt5_lock "$MT5_INSTALL_LOCK" -w 10
 # In the volume: docker logs go away with the container on a redeploy.
 mt5_log_to /config/mt5-shutdown.log
+
+# The container is stopping. The watchdog would start the terminal again
+# once this script releases the lock, and the desktop's shutdown would then
+# kill that terminal and Wine halfway through their start.
+pkill -f /usr/local/bin/mt5-watchdog && mt5_log "Stopped the watchdog"
 
 if mt5_running; then
     mt5_log "Closing MetaTrader 5"

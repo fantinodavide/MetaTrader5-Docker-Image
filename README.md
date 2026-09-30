@@ -94,8 +94,8 @@ All instance data lives in `/config`:
 - `mt5-launch` backs the desktop and menu shortcuts.
 - `libmt5net.so` (`src/mt5net.c`, preloaded into Wine) gives Wine a fixed network adapter
   identity, so MetaTrader 5 keeps its saved logins across restarts.
-- `svc-mt5-shutdown` (s6) closes MetaTrader 5 and waits for Wine to exit when the container
-  stops, before the desktop goes down, so both save their state.
+- `svc-mt5-shutdown` (s6) stops the watchdog, closes MetaTrader 5 and waits for Wine to exit
+  when the container stops, before the desktop goes down, so both save their state.
 
 ## Troubleshooting
 
