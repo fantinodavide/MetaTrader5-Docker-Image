@@ -17,8 +17,8 @@ services:
     volumes:
       - mt5-data:/config
     restart: unless-stopped
-    # Time for MetaTrader 5 to save and close before Docker kills it
-    stop_grace_period: 1m
+    # Time for MetaTrader 5 and Wine to save and exit before Docker kills them
+    stop_grace_period: 90s
 
 volumes:
   mt5-data:
