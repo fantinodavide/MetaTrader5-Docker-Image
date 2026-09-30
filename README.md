@@ -135,10 +135,10 @@ The container closes it cleanly on stop, as long as Docker waits long enough:
 
 MetaTrader 5 also deletes saved accounts ("Accounts deleted due security reason" in its
 journal) when the machine looks different. Docker changes the hostname and the network
-adapters (MAC addresses, interface numbers and names) on every start, so
+adapters (MAC and IP addresses, interface numbers and names) on every start, so
 `docker-compose.yml` fixes the hostname and `src/mt5net.c`, loaded into every Wine process,
-shows Wine the same two adapters (`lo` and `eth0`, fixed MAC) every time. The container's
-real networking is unchanged.
+shows Wine the same two adapters (`lo` and `eth0`, fixed MAC and IP) every time. The
+container's real networking is unchanged.
 
 ### Upgrading from the bind-mounted `./config` layout
 
